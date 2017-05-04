@@ -69,7 +69,6 @@ function simIterLexUnwtd{Tv, Ti}(numIter::Int64,
   return val
 end
 
-
 function simIterLex{Tv<:Float64, Ti}(numIter::Int64,
                                      A::SparseMatrixCSC{Tv, Ti},
                                      isTerm::Array{Bool, 1},
@@ -137,7 +136,7 @@ eps: absolute error tolerance;
 fatal: if true, throws error and halt; if false, return false;
 
 =#
-#=
+
 function checkLexUnwtd{Tv, Ti}(A::SparseMatrixCSC{Tv, Ti},
                                isTerm::Array{Bool, 1},
                                initVal::Array{Float64, 1},
@@ -164,7 +163,7 @@ function checkLexUnwtd{Tv, Ti}(A::SparseMatrixCSC{Tv, Ti},
   end
   return true
 end
-=#
+
 
 #=
 check the correctness of lex assignment for uniformly weighted graphs
@@ -771,3 +770,4 @@ function CompLexMin(A, isTerm, initVal)
   end
   return val
 end
+0
