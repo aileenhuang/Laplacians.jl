@@ -283,9 +283,28 @@ dumbRefineCut(a,collect(1:10))
 
   # export FastSampler, sample, sampleMany
 
+
+r = rand(10)
+s = FastSampler(r)
+sample(s)
+blockSample(r)
+
+  # export SolverTest, speedTestLapSolvers
+
+solvers = [SolverTest(edgeElimLap,"ee") SolverTest(augTreeLap,"aug")]
+
+dic = Dict()
+n = 1000
+a = chimera(n)
+b = randn(n)
+b = b - mean(b)
+x = speedTestLapSolvers(solvers, dic, a, b, tol=1e-2, verbose=true)
+
+
   # export johnlind
 
 johnlind(a)
 
   # export toposort, dirEdgeVertexMat
 
+println("End of testByExport")

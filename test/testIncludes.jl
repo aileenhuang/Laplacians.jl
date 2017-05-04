@@ -6,6 +6,9 @@
 
 include("$(Pkg.dir("Laplacians"))/src/lex.jl")
 
+
+setLexDebugFlag(true)
+
 n = 10
 Pn = pathGraph(n)
 
