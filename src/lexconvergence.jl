@@ -4,15 +4,12 @@
 # IterLex, proposed by Xiao Shi.
 # Includes implementation of quadratic minimization.
 #
-# Started by Aileen Huang, Spring 2017
-pwd()
-push!(LOAD_PATH,"../src")
+# Created by Aileen Huang, Spring 2017
 import Laplacians.intHeap
 import Laplacians.intHeapAdd!, Laplacians.intHeapPop!
-using Plots
-using PyPlots
+# using PyPlot
 using Laplacians
-plotlyjs()
+using Plots
 include("../src/lex.jl")
 
 ITERS = 500
@@ -442,7 +439,7 @@ function maxLexDifference()
             end
 
         if (!progress)
-          # @printf("Terminated after %d iterations after getting within epsilon = %f.\n", t, EPSILON)
+        # @printf("Terminated after %d iterations after getting within epsilon = %f.\n", t, EPSILON)
             plot(difference, label="Difference between solution and potentials per iteration")
           return difference
         end
@@ -526,8 +523,8 @@ function maxGrowthPerIteration()
     j = 100
 
     dim = i*j
-#     graph = grid2(i::Int64, j::Int64; isotropy=1)
-    graph = chimera(dim)
+    graph = grid2(i::Int64, j::Int64; isotropy=1)
+    # graph = chimera(dim)
     isTerm = zeros(Bool, dim)
     initVal = zeros(dim)
     numterms = 10
@@ -566,7 +563,6 @@ function maxGrowthPerIteration()
 
         if (!progress)
           # @printf("Terminated after %d iterations after getting within epsilon = %f.\n", t, EPSILON)
-            loglog(growth)
           return growth
         end
 
@@ -575,7 +571,6 @@ function maxGrowthPerIteration()
         nextVal = tmp
         t = t+1
     end
-    loglog(growth)
     return growth
 end
 
@@ -685,6 +680,77 @@ function plotMaxDifference(lex_difference, quad_difference)
     display(plt)
 end
 
+#Plots the maximum growth for a grid2 graph per iteration for IterLex
+function plotMaxGrowth()
+    i = 1
+    plt = Plots.plot(title="Max Growth Per Iteration", xlabel="Iteration", yscale = :log, ylabel="growth")
+
+    while i <= 10
+        growth = maxGrowthPerIteration()
+        Plots.plot!(growth)
+        i += 1
+    end
+    display(plt)
+end
+
+# # Looks at the maximum difference between potentials and true solution at every iteration
+# # Need to clean up and figure what to do with this later
+# function convexityAnalysis()
+#     #create a generic grid graph
+#     i = 100
+#     j = 100
+
+#     dim = i*j
+# #     graph = grid2(i::Int64, j::Int64; isotropy=1)
+#     graph = chimera(dim)
+#     isTerm = zeros(Bool, dim)
+#     initVal = zeros(dim)
+#     numterms = 10
+#     numIter = ITERS
+    
+#     perm = randperm(i*j)[1:numterms]
+#     for elt in perm
+#         isTerm[elt] = true
+#         initVal[elt] = rand(1)[1]
+#     end
+    
+#     val = copy(initVal)
+#     nextVal = zeros(Float64, dim)
+#     EPSILON = 1/convert(Float64, dim)
+#     t = 1
+# #     growth = []
+#     while t <= numIter
+# #         # If all nodes change within some epsilon
+# #         # then there is no point in continuing.
+
+#         progress = false
+#             for u = 1:dim
+#               if (!isTerm[u])
+#                 nbrs = graph.rowval[graph.colptr[u]:(graph.colptr[u + 1] - 1)]
+#                 maxNeighbor = maximum(val[nbrs])
+#                 minNeighbor = minimum(val[nbrs])
+#                 nextVal[u] = minNeighbor + (maxNeighbor - minNeighbor) / 2.0
+#                 if (nextVal[u] - val[u] > EPSILON)
+#                   progress = true
+#                 end
+#               else
+#                 nextVal[u] = val[u]
+#               end
+#             end
+#         plot(cumsum(sort(val)))
+
+#         if (!progress)
+#           @printf("Terminated after %d iterations after getting within epsilon = %f.\n", t, EPSILON)
+#         end
+
+#         tmp = val
+#         val = nextVal
+#         nextVal = tmp
+#         t = t+1
+#     end
+# end
+
+# convexityAnalysis()
 
 # An attempt at a three-dimensional plotter to show
 # the relationship between n and k for the Tester functions; not working yet, need to revisit
