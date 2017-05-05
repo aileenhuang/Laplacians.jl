@@ -186,14 +186,14 @@ end
 # numterms = number of terminal nodes
 # startn = initial value of n
 # startm = intial value of m
-function grid2Tester(n::Int64, m::Int64, numterms::Int64, startn::Int64, startm::Int64)
+function grid2Tester(n::Int64, m::Int64, numterms::Int64, startn::Int64)
     dim_list = []
     quad_iterations = []
     lex_iterations = []
 
     i = startn
-    j = startm
     while i <= n
+        j = i
         while j <= m
             dim = i*j
             graph = grid2(i::Int64, j::Int64; isotropy=1)
@@ -394,23 +394,9 @@ end
 
 # Looks at the maximum difference between potentials and true solution at every iteration
 # For IterLex
-function maxLexDifference()
+function maxLexDifference(dim, graph, isTerm, initVal)
     #create a generic grid graph
-    i = 100
-    j = 100
-
-    dim = i*j
-    graph = grid2(i::Int64, j::Int64; isotropy=1)
-    isTerm = zeros(Bool, dim)
-    initVal = zeros(dim)
-    numterms = 10
     numIter = ITERS
-
-    perm = randperm(i*j)[1:numterms]
-    for elt in perm
-        isTerm[elt] = true
-        initVal[elt] = rand(1)[1]
-    end
     
     sol = simIterLexUnwtd(ITERS, graph, isTerm, initVal)
     
@@ -440,7 +426,7 @@ function maxLexDifference()
 
         if (!progress)
         # @printf("Terminated after %d iterations after getting within epsilon = %f.\n", t, EPSILON)
-            plot(difference, label="Difference between solution and potentials per iteration")
+            # plot(difference, label="Difference between solution and potentials per iteration")
           return difference
         end
 
@@ -449,7 +435,7 @@ function maxLexDifference()
         nextVal = tmp
         t = t+1
     end
-    plot(difference, label="Difference between solution and potentials per iteration")
+    # plot(difference, label="Difference between solution and potentials per iteration")
     return difference
 end
 
@@ -457,22 +443,7 @@ end
 # For IterQuad
 function maxQuadDifference(dim, graph, isTerm, initVal)
     #create a generic grid graph
-    i = 100
-    j = 100
-
-    dim = i*j
-    graph = grid2(i::Int64, j::Int64; isotropy=1)
-    isTerm = zeros(Bool, dim)
-    initVal = zeros(dim)
-    numterms = 10
     numIter = ITERS
-
-    perm = randperm(i*j)[1:numterms]
-    for elt in perm
-        isTerm[elt] = true
-        initVal[elt] = rand(1)[1]
-    end
-    
     sol = simIterQuadUnwtd(ITERS, graph, isTerm, initVal)
     
     val = copy(initVal)
@@ -503,7 +474,7 @@ function maxQuadDifference(dim, graph, isTerm, initVal)
 
         if (!progress)
           @printf("Terminated after %d iterations after getting within epsilon = %f.\n", t, EPSILON)
-            plot(difference, label="Difference between solution and potentials per iteration")
+            # plot(difference, label="Difference between solution and potentials per iteration")
           return difference
         end
 
@@ -583,7 +554,12 @@ end
 # Plots average runtimes vs. graph size for IterQuad and IterLex
 # by running n_experiments trials on tester functions
 function plotAverageRuns(num_nodes, numterms, startn, fxn, n_experiments, xlabel, ylabel)
-    num_data_pts = Int(ceil(log2(num_nodes/startn)))
+    if fxn != "grid2"
+        num_data_pts = Int(ceil(log2(num_nodes/startn)))
+    else
+        num_data_pts = Int(ceil(log2((num_nodes^2)/startn)))
+    end
+
     sum_lex = zeros(num_data_pts)
     sum_quad = zeros(num_data_pts)
     
@@ -604,7 +580,7 @@ function plotAverageRuns(num_nodes, numterms, startn, fxn, n_experiments, xlabel
         if fxn == "chimera"
             wrapper = chimeraTester(num_nodes, numterms, startn)
         elseif fxn == "grid2"
-            wrapper = grid2Tester(num_nodes, num_nodes, numterms, startn, startn)
+            wrapper = grid2Tester(num_nodes, num_nodes, numterms, startn)
         elseif fxn == "randRegular"
             wrapper = randRegularTester(num_nodes, Int(num_nodes/100), numterms, startn)
         elseif fxn == "randGenRing"
@@ -674,7 +650,7 @@ end
 # Plots the maximum difference per iteration for IterLex and QuadLex
 # based on a predetermined graph
 function plotMaxDifference(lex_difference, quad_difference)
-    plt = Plots.plot(title="Difference between solution and potentials per iteration, grid graph", xlabel="num iters", ylabel="max difference")
+    plt = Plots.plot(title="Difference, randRegular", xlabel="num iters", ylabel="max difference")
     Plots.plot!(lex_difference, label="lex max difference")
     Plots.plot!(quad_difference, label="quad max difference")
     display(plt)
