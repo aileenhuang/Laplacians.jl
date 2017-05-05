@@ -5,9 +5,13 @@
 # Includes implementation of quadratic minimization.
 #
 # Started by Aileen Huang, Spring 2017
-
+pwd()
+push!(LOAD_PATH,"../src")
 import Laplacians.intHeap
 import Laplacians.intHeapAdd!, Laplacians.intHeapPop!
+using Plots
+using Laplacians
+plotlyjs()
 include("../src/lex.jl")
 
 ITERS = 500
@@ -53,7 +57,7 @@ function simIterLexUnwtdEps{Tv, Ti}(numIter::Int64,
     end
 
     if (!progress)
-      @printf("Terminated after %d iterations after getting within epsilon = %f.\n", t, EPSILON)
+      # @printf("Terminated after %d iterations after getting within epsilon = %f.\n", t, EPSILON)
       return [val, n, t, EPSILON]
     end
 
@@ -110,7 +114,7 @@ function simIterQuadUnwtdEps{Tv, Ti}(numIter::Int64,
     end
 
     if (!progress)      # Termination criterion
-      @printf("Terminated after %d iterations after getting within epsilon = %f.\n", t, EPSILON)
+      # @printf("Terminated after %d iterations after getting within epsilon = %f.\n", t, EPSILON)
       return [val, n, t, EPSILON]
     end
 
@@ -123,6 +127,17 @@ function simIterQuadUnwtdEps{Tv, Ti}(numIter::Int64,
 end
 
 # ============================= TESTER FUNCTIONS ==================================
+# Plot wrapper
+# function plotWrapper(fxn, xlabel, ylabel)
+#     plt = Plots.plot(title = title, xlabel=xlabel, ylabel=ylabel)
+#     if fxn == "chimera"
+#         dim_list, lex_iterations, quad_iterations = chimeraTester(10000, 10, 10)
+#         plotRuns(dim_list, quad_iterations, lex_iterations, "Experiments on Randomly Generated Chimera Graphs", "Size of Graph, n", "Num Iters")
+#     end
+    
+# end
+
+
 # Tests on grid2 graph generation.
 #
 # n and m are the dims of the grid
@@ -133,7 +148,7 @@ function grid2Tester(n::Int64, m::Int64, numterms::Int64, startn::Int64, startm:
     dim_list = []
     quad_iterations = []
     lex_iterations = []
-    
+
     i = startn
     j = startm
     while i <= n
@@ -151,15 +166,14 @@ function grid2Tester(n::Int64, m::Int64, numterms::Int64, startn::Int64, startm:
             lexVolt = simIterLexUnwtdEps(ITERS, graph, isTerm, initVal)
             quadVolt = simIterQuadUnwtdEps(ITERS, graph, isTerm, initVal)
             push!(dim_list, i*j)
-            push!(quad_iterations, quadVolt[3])
             push!(lex_iterations, lexVolt[3])
+            push!(quad_iterations, quadVolt[3])
             j = j*2
         end
         i = i*2
     end
-    loglog(dim_list, quad_iterations, label="quad")
-    loglog(dim_list, lex_iterations, label="lex")
-    legend()
+    return [dim_list, lex_iterations, quad_iterations]
+
 end
 
 # Tests on chimera graph generation.
@@ -186,13 +200,12 @@ function chimeraTester(n::Int64, numterms::Int64, startn::Int64)
         lexVolt = simIterLexUnwtdEps(ITERS, graph, isTerm, initVal)
         quadVolt = simIterQuadUnwtdEps(ITERS, graph, isTerm, initVal)
         push!(dim_list, i)
-        push!(quad_iterations, quadVolt[3])
         push!(lex_iterations, lexVolt[3])
+        push!(quad_iterations, quadVolt[3])
+
         i = i*2
     end
-    loglog(dim_list, quad_iterations, label="quad")
-    loglog(dim_list, lex_iterations, label="lex")
-    legend()
+    return [dim_list, lex_iterations, quad_iterations]
 end
 
 # Tests on randRegular graph generation.
@@ -221,13 +234,12 @@ function randRegularTester(n::Int64, k::Int64, numterms::Int64, startn::Int64)
         lexVolt = simIterLexUnwtdEps(ITERS, graph, isTerm, initVal)
         quadVolt = simIterQuadUnwtdEps(ITERS, graph, isTerm, initVal)
         push!(dim_list, i)
-        push!(quad_iterations, quadVolt[3])
         push!(lex_iterations, lexVolt[3])
+        push!(quad_iterations, quadVolt[3])
         i = i*2
     end
-    loglog(dim_list, quad_iterations, label="quad")
-    loglog(dim_list, lex_iterations, label="lex")
-    legend()
+    return [dim_list, lex_iterations, quad_iterations]
+
 end
 
 # Tests on randGenRing graph generation.
@@ -256,13 +268,11 @@ function randGenRingTester(n::Int64, k::Int64, numterms::Int64, startn::Int64)
         lexVolt = simIterLexUnwtdEps(ITERS, graph, isTerm, initVal)
         quadVolt = simIterQuadUnwtdEps(ITERS, graph, isTerm, initVal)
         push!(dim_list, i)
-        push!(quad_iterations, quadVolt[3])
         push!(lex_iterations, lexVolt[3])
+        push!(quad_iterations, quadVolt[3])
         i = i*2
     end
-    loglog(dim_list, quad_iterations, label="quad")
-    loglog(dim_list, lex_iterations, label="lex")
-    legend()
+    return [dim_list, lex_iterations, quad_iterations]
 end
 
 # Tests on grownGraph graph generation.
@@ -291,14 +301,13 @@ function grownGraphTester(n::Int64, k::Int64, numterms::Int64, startn::Int64)
         lexVolt = simIterLexUnwtdEps(ITERS, graph, isTerm, initVal)
         quadVolt = simIterQuadUnwtdEps(ITERS, graph, isTerm, initVal)
         push!(dim_list, i)
-        push!(quad_iterations, quadVolt[3])
         push!(lex_iterations, lexVolt[3])
+
+        push!(quad_iterations, quadVolt[3])
         i = i*2
     end
-    return [dim_list, quad_iterations, lex_iterations]
-#     loglog(dim_list, quad_iterations, label="quad")
-#     loglog(dim_list, lex_iterations, label="lex")
-    # legend()
+    return [dim_list, lex_iterations, quad_iterations]
+
 end
 
 
@@ -335,5 +344,217 @@ end
 # end
 # ThreeDimTestPlotter(100, 3, 10, 10)
 
-#=============================== TESTS AGAINST LEX.JL ============================
+#=============================== TESTS AGAINST LEX.JL ============================#
 
+# Looks at the maximum difference between potentials and true solution at every iteration
+function maxLexDifference()
+    #create a generic grid graph
+    i = 100
+    j = 100
+
+    dim = i*j
+    graph = grid2(i::Int64, j::Int64; isotropy=1)
+    isTerm = zeros(Bool, dim)
+    initVal = zeros(dim)
+    numterms = 10
+    numIter = ITERS
+
+    perm = randperm(i*j)[1:numterms]
+    for elt in perm
+        isTerm[elt] = true
+        initVal[elt] = rand(1)[1]
+    end
+    
+    sol = simIterLexUnwtd(ITERS, graph, isTerm, initVal)
+    
+    val = copy(initVal)
+    nextVal = zeros(Float64, dim)
+    EPSILON = 1/convert(Float64, dim)
+    t = 1
+    difference = []
+    while t <= numIter
+#         # If all nodes change within some epsilon
+#         # then there is no point in continuing.
+        append!(difference, maximum(sol - val))
+        progress = false
+            for u = 1:dim
+              if (!isTerm[u])
+                nbrs = graph.rowval[graph.colptr[u]:(graph.colptr[u + 1] - 1)]
+                maxNeighbor = maximum(val[nbrs])
+                minNeighbor = minimum(val[nbrs])
+                nextVal[u] = minNeighbor + (maxNeighbor - minNeighbor) / 2.0
+                if (nextVal[u] - val[u] > EPSILON)
+                  progress = true
+                end
+              else
+                nextVal[u] = val[u]
+              end
+            end
+
+        if (!progress)
+          # @printf("Terminated after %d iterations after getting within epsilon = %f.\n", t, EPSILON)
+            plot(difference, label="Difference between solution and potentials per iteration")
+          return difference
+        end
+
+        tmp = val
+        val = nextVal
+        nextVal = tmp
+        t = t+1
+    end
+    plot(difference, label="Difference between solution and potentials per iteration")
+    return difference
+end
+
+# Looks at the maximum difference between iterations
+function maxGrowthPerIteration()
+    #create a generic grid graph
+    i = 100
+    j = 100
+
+    dim = i*j
+#     graph = grid2(i::Int64, j::Int64; isotropy=1)
+    graph = chimera(dim)
+    isTerm = zeros(Bool, dim)
+    initVal = zeros(dim)
+    numterms = 10
+    numIter = ITERS
+    
+    perm = randperm(i*j)[1:numterms]
+    for elt in perm
+        isTerm[elt] = true
+        initVal[elt] = rand(1)[1]
+    end
+    
+    val = copy(initVal)
+    nextVal = zeros(Float64, dim)
+    EPSILON = 1/convert(Float64, dim)
+    t = 1
+    growth = []
+    while t <= numIter
+#         # If all nodes change within some epsilon
+#         # then there is no point in continuing.
+
+        progress = false
+            for u = 1:dim
+              if (!isTerm[u])
+                nbrs = graph.rowval[graph.colptr[u]:(graph.colptr[u + 1] - 1)]
+                maxNeighbor = maximum(val[nbrs])
+                minNeighbor = minimum(val[nbrs])
+                nextVal[u] = minNeighbor + (maxNeighbor - minNeighbor) / 2.0
+                if (nextVal[u] - val[u] > EPSILON)
+                  progress = true
+                end
+              else
+                nextVal[u] = val[u]
+              end
+            end
+        append!(growth, maximum(nextVal - val))
+
+        if (!progress)
+          # @printf("Terminated after %d iterations after getting within epsilon = %f.\n", t, EPSILON)
+            loglog(growth)
+          return growth
+        end
+
+        tmp = val
+        val = nextVal
+        nextVal = tmp
+        t = t+1
+    end
+    loglog(growth)
+    return growth
+end
+
+#=========================================PLOTTING CODE ==================================#
+function plotRuns(dim_list, lex_iterations, quad_iterations)
+    Plots.plot!(dim_list, lex_iterations, linecolor="orange", label="lex")
+    Plots.plot!(dim_list, quad_iterations, linecolor="blue", label="quadratic")
+end
+
+function plotAverageRuns(num_nodes, numterms, startn, fxn, n_experiments, xlabel, ylabel)
+    num_data_pts = Int(ceil(log2(num_nodes/startn)))
+    sum_lex = zeros(num_data_pts)
+    sum_quad = zeros(num_data_pts)
+    
+    lex_trials = []
+    quad_trials = []
+    wrapper = []
+    
+    i = 1
+    while i <= num_data_pts
+       push!(lex_trials, [])
+       push!(quad_trials, [])
+        i += 1
+    end
+
+    i = 1
+    while i <= n_experiments
+        #switch case for functions
+        if fxn == "chimera"
+            wrapper = chimeraTester(num_nodes, numterms, startn)
+        elseif fxn == "grid2"
+            wrapper = grid2Tester(num_nodes, num_nodes, numterms, startn, startn)
+        elseif fxn == "randRegular"
+            wrapper = randRegularTester(num_nodes, num_nodes/100, numterms, startn)
+        elseif fxn == "randGenRing"
+            wrapper = randGenRingTester(num_nodes, num_nodes/100, numterms, startn)
+        elseif fxn == "grownGraph"
+            wrapper = grownGraphTester(num_nodes, num_nodes/100, numterms, startn)
+        end
+        
+        dim_list = wrapper[1]
+        single_lex = wrapper[2]
+        single_quad = wrapper[3]
+            
+        j = 1
+        while j <= num_data_pts
+            push!(lex_trials[j], single_lex[j])
+            push!(quad_trials[j], single_quad[j])
+            j+=1
+        end
+        sum_lex += wrapper[2]
+        sum_quad += wrapper[3]
+        i += 1
+    end
+    
+    if fxn == "chimera"
+        title = string("Average Runs on Randomly Generated Chimera Graphs, ", string(n_experiments), " trials")
+    elseif fxn == "grid2"
+        title = string("Average Runs on Randomly Generated Grid2 Graphs, ", string(n_experiments), " trials")
+    elseif fxn == "randRegular"
+        title = string("Average Runs on Randomly Generated randRegular Graphs, ", string(n_experiments), " trials")
+    elseif fxn == "randGenRing"
+        title = string("Average Runs on Randomly Generated randGenRing Graphs, ", string(n_experiments), " trials")
+    elseif fxn == "grownGraph"
+        title = string("Average Runs on Randomly Generated grownGraph Graphs, ", string(n_experiments), " trials")
+    end
+
+    plt = Plots.plot(title = title, xlabel=xlabel, ylabel=ylabel)
+    
+    avg_lex = sum_lex/n_experiments
+    avg_quad = sum_quad/n_experiments
+    dim_list = wrapper[1]
+    plotRuns(dim_list, avg_lex, avg_quad)
+    display(plt)
+    return [dim_list, num_data_pts, lex_trials, quad_trials, avg_lex, avg_quad]
+end
+
+function plotStandardDevs(dim_list, num_data_pts, lex_trials, quad_trials, avg_lex, avg_quad)
+    lex_stds = []
+    quad_stds = []
+    i=1
+    while i <= num_data_pts
+        lex_elt = lex_trials[i]
+        quad_elt = quad_trials[i]
+
+        push!(lex_stds, stdm(lex_elt, avg_lex[i]))
+        push!(quad_stds, stdm(quad_elt, avg_quad[i]))
+
+        i+=1
+    end
+    plt2 = Plots.plot(title = "Standard Deviation vs Graph Size", xlabel="n", ylabel="Standard Deviation")
+    Plots.plot!(dim_list, lex_stds, linecolor="red", label="lex")
+    Plots.plot!(dim_list, quad_stds, linecolor="green", label="quadratic")
+    display(plt2)
+end

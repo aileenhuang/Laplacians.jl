@@ -770,4 +770,3 @@ function CompLexMin(A, isTerm, initVal)
   end
   return val
 end
-0
