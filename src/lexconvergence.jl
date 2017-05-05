@@ -10,12 +10,14 @@ push!(LOAD_PATH,"../src")
 import Laplacians.intHeap
 import Laplacians.intHeapAdd!, Laplacians.intHeapPop!
 using Plots
+using PyPlots
 using Laplacians
 plotlyjs()
 include("../src/lex.jl")
 
 ITERS = 500
 
+#=================================ALGORITHM SIMULATIONS===============================#
 
 # numIter: Number of iterations
 # A: SparseMatrix, the adjacency matrix representation of the graph
@@ -125,6 +127,49 @@ function simIterQuadUnwtdEps{Tv, Ti}(numIter::Int64,
   end
   return [val, n, t, EPSILON]
 end
+
+function simIterQuadUnwtd{Tv, Ti}(numIter::Int64,
+                                 A::SparseMatrixCSC{Tv, Ti},
+                                 isTerm::Array{Bool, 1},
+                                 initVal::Array{Float64, 1}, )
+  n = A.n
+  val = copy(initVal)
+  nextVal = zeros(Float64, n)
+
+  for t = 1:numIter
+    # if the bits representation of val and nextVal are the same for
+    # ever vertex, then there is no point in keeping iterating.
+    progress = false
+    for u = 1:n         # For each node, perform the algorithm...
+      if (!isTerm[u])
+        nbrs = A.rowval[A.colptr[u]:(A.colptr[u + 1] - 1)]
+
+        avgsum = float(0)
+        for i in val[nbrs]
+          avgsum += i
+        end 
+        nextVal[u] = avgsum / length(nbrs)
+        if (bits(val[u]) != bits(nextVal[u]))
+          progress = true
+        end
+      else
+        nextVal[u] = val[u]
+      end
+    end
+
+    if (!progress)
+      @printf("INFO: simIterLexUnwtd: terminating early after %d iterations,
+              as numerical error prevents further progress.\n", t)
+      return val
+    end
+
+    tmp = val
+    val = nextVal
+    nextVal = tmp
+  end
+  return val
+end
+
 
 # ============================= TESTER FUNCTIONS ==================================
 # Plot wrapper
@@ -255,7 +300,7 @@ function randGenRingTester(n::Int64, k::Int64, numterms::Int64, startn::Int64)
     i = startn
     while i <= n
         dim = i
-        graph = randRegular(i, k)
+        graph = randGenRing(i, k)
         isTerm = zeros(Bool, dim)
         initVal = zeros(dim)
 
@@ -288,7 +333,7 @@ function grownGraphTester(n::Int64, k::Int64, numterms::Int64, startn::Int64)
     i = startn
     while i <= n
         dim = i
-        graph = randRegular(i, k)
+        graph = grownGraph(i, k)
         isTerm = zeros(Bool, dim)
         initVal = zeros(dim)
 
@@ -310,43 +355,48 @@ function grownGraphTester(n::Int64, k::Int64, numterms::Int64, startn::Int64)
 
 end
 
+# Creates a sample (fairly hardcoded) grid2 graph for easy testing
+function makeSampleGridGraph()
+    #create a generic grid graph
+    i = 100
+    j = 100
 
-# An attempt at a three-dimensional plotter to show
-# the relationship between n and k; not working yet, need to revisit
-# function ThreeDimTestPlotter(n::Int64, k::Int64, numterms::Int64, startn::Int64)
-#     wrapper = []
-#     quadTests = []
-#     maxVal = 0
-#     j = 1
-#     while j <= k
-# #         push!(wrapper, grownGraphTester(n, k, numterms, startn))
-#         append!(quadTests, grownGraphTester(n, k, numterms, startn)[3])
-#         print(quadTests)
-#         j = j+1
-#     end
-    
-#     rows = k
-#     cols = Int(ceil(log2(n/startn)))
-#     x = linspace(0, cols)
-#     y = linspace(0, rows)
-#     xgrid = repmat(x',n,1)
-#     ygrid = repmat(y,1,n)
-    
-#     z = reshape(quadTests, rows, cols)
-    
-#     fig = figure("pyplot_surfaceplot",figsize=(10,10))
-#     ax = fig[:add_subplot](2,1,1, projection = "3d")
-#     ax[:plot_surface](xgrid, ygrid, z, rstride=2,edgecolors="k", cstride=2, cmap=ColorMap("gray"), alpha=0.8, linewidth=0.25)
-# #     xlabel("X")
-# #     ylabel("Y")
-# #     title("Surface Plot")
+    dim = i*j
+    graph = grid2(i::Int64, j::Int64; isotropy=1)
+    isTerm = zeros(Bool, dim)
+    initVal = zeros(dim)
+    numterms = 10
+    numIter = ITERS
 
-# end
-# ThreeDimTestPlotter(100, 3, 10, 10)
+    perm = randperm(i*j)[1:numterms]
+    for elt in perm
+        isTerm[elt] = true
+        initVal[elt] = rand(1)[1]
+    end
+    return [dim, graph, isTerm, initVal]
+end
+
+# Creates a sample (fairly hardcoded) randRegular graph for easy testing
+function makeSampleRandRegular()
+    dim = 10000
+    k = 100
+    graph = randRegular(dim, k)
+    isTerm = zeros(Bool, dim)
+    initVal = zeros(dim)
+    numterms = 10
+
+    perm = randperm(dim)[1:numterms]
+    for elt in perm
+        isTerm[elt] = true
+        initVal[elt] = rand(1)[1]
+    end
+    return [dim, graph, isTerm, initVal]
+end
 
 #=============================== TESTS AGAINST LEX.JL ============================#
 
 # Looks at the maximum difference between potentials and true solution at every iteration
+# For IterLex
 function maxLexDifference()
     #create a generic grid graph
     i = 100
@@ -403,6 +453,69 @@ function maxLexDifference()
         t = t+1
     end
     plot(difference, label="Difference between solution and potentials per iteration")
+    return difference
+end
+
+# Looks at the maximum difference between potentials and true solution at every iteration
+# For IterQuad
+function maxQuadDifference(dim, graph, isTerm, initVal)
+    #create a generic grid graph
+    i = 100
+    j = 100
+
+    dim = i*j
+    graph = grid2(i::Int64, j::Int64; isotropy=1)
+    isTerm = zeros(Bool, dim)
+    initVal = zeros(dim)
+    numterms = 10
+    numIter = ITERS
+
+    perm = randperm(i*j)[1:numterms]
+    for elt in perm
+        isTerm[elt] = true
+        initVal[elt] = rand(1)[1]
+    end
+    
+    sol = simIterQuadUnwtd(ITERS, graph, isTerm, initVal)
+    
+    val = copy(initVal)
+    nextVal = zeros(Float64, dim)
+    EPSILON = 1/convert(Float64, dim)
+    t = 1
+    difference = []
+    while t <= numIter
+        # If all nodes change within some epsilon
+        # then there is no point in continuing.
+        append!(difference, maximum(sol - val))
+        progress = false
+            for u = 1:dim         # For each node, perform the algorithm...
+                if (!isTerm[u])
+                    nbrs = graph.rowval[graph.colptr[u]:(graph.colptr[u + 1] - 1)]
+                    avgsum = float(0)
+                    for i in val[nbrs]
+                      avgsum += i
+                    end 
+                    nextVal[u] = avgsum / length(nbrs)
+                    if (nextVal[u] - val[u] > EPSILON)
+                      progress = true
+                    end
+                else
+                    nextVal[u] = val[u]
+                end
+            end
+
+        if (!progress)
+          @printf("Terminated after %d iterations after getting within epsilon = %f.\n", t, EPSILON)
+            plot(difference, label="Difference between solution and potentials per iteration")
+          return difference
+        end
+
+        tmp = val
+        val = nextVal
+        nextVal = tmp
+        t = t+1
+    end
+#     plot(difference, label="Difference between solution and potentials per iteration")
     return difference
 end
 
@@ -472,6 +585,8 @@ function plotRuns(dim_list, lex_iterations, quad_iterations)
     Plots.plot!(dim_list, quad_iterations, linecolor="blue", label="quadratic")
 end
 
+# Plots average runtimes vs. graph size for IterQuad and IterLex
+# by running n_experiments trials on tester functions
 function plotAverageRuns(num_nodes, numterms, startn, fxn, n_experiments, xlabel, ylabel)
     num_data_pts = Int(ceil(log2(num_nodes/startn)))
     sum_lex = zeros(num_data_pts)
@@ -496,11 +611,11 @@ function plotAverageRuns(num_nodes, numterms, startn, fxn, n_experiments, xlabel
         elseif fxn == "grid2"
             wrapper = grid2Tester(num_nodes, num_nodes, numterms, startn, startn)
         elseif fxn == "randRegular"
-            wrapper = randRegularTester(num_nodes, num_nodes/100, numterms, startn)
+            wrapper = randRegularTester(num_nodes, Int(num_nodes/100), numterms, startn)
         elseif fxn == "randGenRing"
-            wrapper = randGenRingTester(num_nodes, num_nodes/100, numterms, startn)
+            wrapper = randGenRingTester(num_nodes, Int(num_nodes/100), numterms, startn)
         elseif fxn == "grownGraph"
-            wrapper = grownGraphTester(num_nodes, num_nodes/100, numterms, startn)
+            wrapper = grownGraphTester(num_nodes, Int(num_nodes/100), numterms, startn)
         end
         
         dim_list = wrapper[1]
@@ -540,6 +655,8 @@ function plotAverageRuns(num_nodes, numterms, startn, fxn, n_experiments, xlabel
     return [dim_list, num_data_pts, lex_trials, quad_trials, avg_lex, avg_quad]
 end
 
+# Plots the standard deviations of runtimes with respect to graph size
+# for both IterLex and IterQuad
 function plotStandardDevs(dim_list, num_data_pts, lex_trials, quad_trials, avg_lex, avg_quad)
     lex_stds = []
     quad_stds = []
@@ -558,3 +675,46 @@ function plotStandardDevs(dim_list, num_data_pts, lex_trials, quad_trials, avg_l
     Plots.plot!(dim_list, quad_stds, linecolor="green", label="quadratic")
     display(plt2)
 end
+
+# Plots the maximum difference per iteration for IterLex and QuadLex
+# based on a predetermined graph
+function plotMaxDifference(lex_difference, quad_difference)
+    plt = Plots.plot(title="Difference between solution and potentials per iteration, grid graph", xlabel="num iters", ylabel="max difference")
+    Plots.plot!(lex_difference, label="lex max difference")
+    Plots.plot!(quad_difference, label="quad max difference")
+    display(plt)
+end
+
+
+# An attempt at a three-dimensional plotter to show
+# the relationship between n and k for the Tester functions; not working yet, need to revisit
+# function ThreeDimTestPlotter(n::Int64, k::Int64, numterms::Int64, startn::Int64)
+#     wrapper = []
+#     quadTests = []
+#     maxVal = 0
+#     j = 1
+#     while j <= k
+# #         push!(wrapper, grownGraphTester(n, k, numterms, startn))
+#         append!(quadTests, grownGraphTester(n, k, numterms, startn)[3])
+#         print(quadTests)
+#         j = j+1
+#     end
+    
+#     rows = k
+#     cols = Int(ceil(log2(n/startn)))
+#     x = linspace(0, cols)
+#     y = linspace(0, rows)
+#     xgrid = repmat(x',n,1)
+#     ygrid = repmat(y,1,n)
+    
+#     z = reshape(quadTests, rows, cols)
+    
+#     fig = figure("pyplot_surfaceplot",figsize=(10,10))
+#     ax = fig[:add_subplot](2,1,1, projection = "3d")
+#     ax[:plot_surface](xgrid, ygrid, z, rstride=2,edgecolors="k", cstride=2, cmap=ColorMap("gray"), alpha=0.8, linewidth=0.25)
+# #     xlabel("X")
+# #     ylabel("Y")
+# #     title("Surface Plot")
+
+# end
+# ThreeDimTestPlotter(100, 3, 10, 10)
