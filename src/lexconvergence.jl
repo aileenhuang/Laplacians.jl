@@ -186,37 +186,39 @@ end
 # numterms = number of terminal nodes
 # startn = initial value of n
 # startm = intial value of m
-function grid2Tester(n::Int64, m::Int64, numterms::Int64, startn::Int64)
-    dim_list = []
-    quad_iterations = []
-    lex_iterations = []
+# function grid2Tester(n::Int64, m::Int64, numterms::Int64, startn::Int64)
+#     dim_list = []
+#     quad_iterations = []
+#     lex_iterations = []
 
-    i = startn
-    while i <= n
-        j = i
-        while j <= m
-            dim = i*j
-            graph = grid2(i::Int64, j::Int64; isotropy=1)
-            isTerm = zeros(Bool, dim)
-            initVal = zeros(dim)
-            perm = randperm(i*j)[1:numterms]
-            for elt in perm
-                isTerm[elt] = true
-                initVal[elt] = rand(1)[1]
-            end
+#     i = startn
+#     while i <= n
+#         # j = i
+#         # while j <= m
+#             # dim = i*j
+#             dim = i * m
+#             # graph = grid2(i::Int64, j::Int64; isotropy=1)
+#             graph = grid2(i::Int64, m::Int64, isotropy=1)
+#             isTerm = zeros(Bool, dim)
+#             initVal = zeros(dim)
+#             perm = randperm(dim)[1:numterms]
+#             for elt in perm
+#                 isTerm[elt] = true
+#                 initVal[elt] = rand(1)[1]
+#             end
             
-            lexVolt = simIterLexUnwtdEps(ITERS, graph, isTerm, initVal)
-            quadVolt = simIterQuadUnwtdEps(ITERS, graph, isTerm, initVal)
-            push!(dim_list, i*j)
-            push!(lex_iterations, lexVolt[3])
-            push!(quad_iterations, quadVolt[3])
-            j = j*2
-        end
-        i = i*2
-    end
-    return [dim_list, lex_iterations, quad_iterations]
+#             lexVolt = simIterLexUnwtdEps(ITERS, graph, isTerm, initVal)
+#             quadVolt = simIterQuadUnwtdEps(ITERS, graph, isTerm, initVal)
+#             push!(dim_list, dim)
+#             push!(lex_iterations, lexVolt[3])
+#             push!(quad_iterations, quadVolt[3])
+#             # j = j*2
+#         # end
+#         i = i*2
+#     end
+#     return [dim_list, lex_iterations, quad_iterations]
 
-end
+# end
 
 # Tests on chimera graph generation.
 #
@@ -554,11 +556,11 @@ end
 # Plots average runtimes vs. graph size for IterQuad and IterLex
 # by running n_experiments trials on tester functions
 function plotAverageRuns(num_nodes, numterms, startn, fxn, n_experiments, xlabel, ylabel)
-    if fxn != "grid2"
+    # if fxn != "grid2"
         num_data_pts = Int(ceil(log2(num_nodes/startn)))
-    else
+    # else
         num_data_pts = Int(ceil(log2((num_nodes^2)/startn)))
-    end
+    # end
 
     sum_lex = zeros(num_data_pts)
     sum_quad = zeros(num_data_pts)
@@ -579,8 +581,8 @@ function plotAverageRuns(num_nodes, numterms, startn, fxn, n_experiments, xlabel
         #switch case for functions
         if fxn == "chimera"
             wrapper = chimeraTester(num_nodes, numterms, startn)
-        elseif fxn == "grid2"
-            wrapper = grid2Tester(num_nodes, num_nodes, numterms, startn)
+        # elseif fxn == "grid2"
+            # wrapper = grid2Tester(num_nodes, num_nodes, numterms, startn)
         elseif fxn == "randRegular"
             wrapper = randRegularTester(num_nodes, Int(num_nodes/100), numterms, startn)
         elseif fxn == "randGenRing"
